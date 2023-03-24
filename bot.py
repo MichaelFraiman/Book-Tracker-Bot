@@ -23,7 +23,7 @@ def set_filename(message):
     my_hash = hashlib.sha512(my_bytes).digest()
     my_base32_hash = base64.b32encode(my_hash).decode('utf-8')
     
-    s = os.path.join("jsons", "books_" + my_base32_hash + ".json")
+    s = os.path.join("jsons", "books_" + my_base32_hash[:20] + ".json")
     return s
 
 # Reads a json file
@@ -232,6 +232,43 @@ def info_pages(message, name, author, filename):
         bot.register_next_step_handler(message, lambda msg: info_pages(msg, name, author, filename) )
 
 
+# calculates total time spent
+def calc_time(start, stop):
+    time_format = '%Y-%m-%d_%H:%M:%S.%f'
+    s = start.split()
+    f = stop.split()
+
+    tot = datetime.timedelta()
+
+    for i, t in enumerate(s):
+        time1 = datetime.datetime.strptime(s[i], time_format)
+        time2 = datetime.datetime.strptime(f[i], time_format)
+        delta = time2 -time1
+        tot += delta
+
+    #tot = datetime.datetime.combine(datetime.date.min, datetime.time.min) + tot
+
+    return tot
+
+
+# show total time of reading
+def stats_show(message):
+    chat_id = message.chat.id
+    filename = set_filename(message)
+    data = json_read(filename)
+
+    s = "The total amount of time spent:"
+
+    for d in data:
+        if "times_start" in d:
+            tot = calc_time(d["times_start"], d["times_stop"])
+            formatted = re.sub(r"\:\d\d\.\d+$", "", str(tot))
+            s += "\n" + d["name"] + f" [by {d['author']}] " + formatted
+        else:
+            s += "\n" + d["name"] + f" [by {d['author']}] " + "NEW"
+    
+    bot.send_message(chat_id, s)
+
 # Handler for callback queries
 @bot.callback_query_handler(func=lambda call: True)
 def handle_query(call):
@@ -251,6 +288,10 @@ def handle_query(call):
                 else:
                     bot.send_message(chat_id, "There are no books yet")
                     menu_main(call.message)
+            case "See statistics":
+                #bot.send_message(chat_id, "Not implemented yet")
+                stats_show(call.message)
+                menu_main(call.message)
             case _:
                 # Callback is a book name
                 if str(call.data).startswith("_book:name_"):
