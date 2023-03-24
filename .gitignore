@@ -1,3 +1,5 @@
 /jsons/
 /private/
 .DS_Store
+/connect.sh
+/transfer.sh

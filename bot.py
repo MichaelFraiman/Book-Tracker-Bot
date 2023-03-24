@@ -3,7 +3,6 @@ import telebot
 from telebot import types
 import re
 from pathlib import Path
-import PyPDF2
 import hashlib
 import base64
 import os
@@ -317,6 +316,8 @@ def handle_all_messages(message):
 
 def main():
     
+    Path("jsons").mkdir(parents=True, exist_ok=True)
+
     bot.polling()
 
     return
