@@ -140,11 +140,11 @@ def read_start(name, filename):
                 page = d["page_stop"].split()[-1]
             else:
                 page = 1
-            if "times_start" in d:
-                d["times_start"] += " " + str(formatted_time)
+            if "time_start" in d:
+                d["time_start"] += " " + str(formatted_time)
                 d["page_start"] += " " + str(page)
             else:
-                d["times_start"] = str(formatted_time)
+                d["time_start"] = str(formatted_time)
                 d["page_start"] = str(page)
             
             break
@@ -166,11 +166,11 @@ def read_stop(message, name, filename):
         if d["name"] == name:
             current_time = datetime.datetime.now()
             formatted_time = current_time.strftime('%Y-%m-%d_%H:%M:%S.%f')
-            if "times_stop" in d:
-                d["times_stop"] += " " + str(formatted_time)
+            if "time_stop" in d:
+                d["time_stop"] += " " + str(formatted_time)
                 d["page_stop"] += " " + str(page)
             else:
-                d["times_stop"] = str(formatted_time)
+                d["time_stop"] = str(formatted_time)
                 d["page_stop"] = str(page)
         
 
@@ -222,7 +222,7 @@ def info_pages(message, name, author, filename):
         d = {
             "name": name,
             "author": author,
-            "pages_total": tot_pages
+            "page_total": tot_pages
         }
         data.append(d)
         json_write(filename, data)
@@ -246,8 +246,6 @@ def calc_time(start, stop):
         delta = time2 -time1
         tot += delta
 
-    #tot = datetime.datetime.combine(datetime.date.min, datetime.time.min) + tot
-
     return tot
 
 
@@ -260,10 +258,12 @@ def stats_show(message):
     s = "The total amount of time spent:"
 
     for d in data:
-        if "times_start" in d:
-            tot = calc_time(d["times_start"], d["times_stop"])
+        if "time_start" in d:
+            tot = calc_time(d["time_start"], d["time_stop"])
+            page_cur = d["page_stop"].split()[-1]
+            page_tot = d["page_total"]
             formatted = re.sub(r"\:\d\d\.\d+$", "", str(tot))
-            s += "\n" + d["name"] + f" [by {d['author']}] " + formatted
+            s += "\n" + d["name"] + f" [by {d['author']}] " + formatted + f". Page {page_cur}/{page_tot}"
         else:
             s += "\n" + d["name"] + f" [by {d['author']}] " + "NEW"
     
@@ -284,7 +284,7 @@ def handle_query(call):
                 books_list = book_get_list(call.message)
                 if books_list != []:
                     keyboard = book_list(books_list)                    
-                    bot.send_message(chat_id, "Please select an option:", reply_markup=keyboard)
+                    bot.send_message(chat_id, "Please select a book:", reply_markup=keyboard)
                 else:
                     bot.send_message(chat_id, "There are no books yet")
                     menu_main(call.message)
@@ -310,6 +310,10 @@ def handle_query(call):
                     ask_page(call.message, name, set_filename(call.message))
                 else: 
                     menu_main(call.message)
+
+@bot.message_handler(func=lambda message: True)
+def handle_all_messages(message):
+   menu_main(message)
 
 def main():
     
